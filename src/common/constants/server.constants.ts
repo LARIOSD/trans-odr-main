@@ -11,4 +11,9 @@ export const POSTGRES_BD_CONFIG = {
     ssl: false
 }
 
+export const EXTERNALS_ENV = {
+    googleApiUrl: process.env.GOOGLE_MAPS_API_KEY,
+    googleToken : process.env.API_KEY_GOOGLE
+}
+
 console.log(POSTGRES_BD_CONFIG);
