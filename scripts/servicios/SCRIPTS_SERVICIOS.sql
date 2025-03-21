@@ -9,7 +9,7 @@ ALTER TABLE public.tbl_detalles_servicio ALTER COLUMN odr DROP NOT NULL;
 
 
 
-
+-- DROP FUNCTION public.fnc_obtener_servicios(json);
 
 CREATE OR REPLACE FUNCTION public.fnc_obtener_servicios(params json)
  RETURNS json
@@ -45,19 +45,19 @@ BEGIN
                 ptds.solicitante, ptds.direccion_inicial AS direc_inicio, ptds.direccion_final AS direc_final, 
                 ptds.hora_inicio, ptds.hora_final, ptds.odr, CONCAT(ptu.nombres, ' ', ptu.apellidos) AS conductor,
 				ptds.precio, ptds.distancia, 
-				CASE 
-			        WHEN v_es_admin IS TRUE THEN 
-			            TO_CHAR(ptds.fecha_creacion, 'YYYY-MM-DD HH24:MI')
-			        ELSE 
-			            ''
-			    END AS fecha_registro
+                CASE 
+                    WHEN v_es_admin IS TRUE THEN 
+                        TO_CHAR(ptds.fecha_creacion, 'YYYY-MM-DD HH24:MI')
+                    ELSE 
+                        ''
+                END AS fecha_registro
             FROM public.tbl_servicios pts
             INNER JOIN public.tbl_detalles_servicio ptds ON ptds.id_servicio = pts.id_servicio
             INNER JOIN public.tbl_tipos_servicios ptst ON ptst.id_tipo_servicio = pts.id_tipo_servicio
 			INNER JOIN public.tbl_usuarios ptu ON ptu.id_usuario = pts.usuario_creador
             WHERE ptds.id_estado = v_estado_id
             AND (v_es_admin = true OR pts.usuario_creador = v_usuario_id)
-             ORDER BY pts.fecha_servicio DESC
+             ORDER BY pts.fecha_servicio, ptds.hora_inicio DESC
         ) t
     );
 
@@ -68,19 +68,27 @@ $function$
 
 
 
-CREATE OR REPLACE PROCEDURE public.prc_insertar_actualizar_servicio(IN i_servicio json, OUT results json) LANGUAGE 'plpgsql' AS $$
+-- DROP PROCEDURE public.prc_insertar_actualizar_servicio(in json, out json);
+
+CREATE OR REPLACE PROCEDURE public.prc_insertar_actualizar_servicio(IN i_servicio json, OUT results json)
+ LANGUAGE plpgsql
+AS $procedure$
 DECLARE
     v_estado_activo integer := 1;
     v_tbl_servicios public.tbl_servicios%rowtype;
     v_tbl_detalles_servicio public.tbl_detalles_servicio%rowtype;
 
-    v_usuario_id integer := (i_servicio->>'usuario')::integer;
-    v_estado_id integer := COALESCE((i_servicio->>'estado')::integer, v_estado_activo);
+    v_usuario_id integer 	:= (i_servicio->>'usuario')::integer;
+    v_estado_id integer 	:= COALESCE((i_servicio->>'estado')::integer, v_estado_activo);
 
-    v_tipo_servicio_id integer := (i_servicio->>'tipo_servicio')::integer;
-    v_fecha_servicio date := (i_servicio->>'fecha_servicio')::date;
+    v_tipo_servicio_id integer  := (i_servicio->>'tipo_servicio')::integer;
+    v_fecha_servicio date 		:= (i_servicio->>'fecha_servicio')::date;
 
     v_direcciones jsonb := (i_servicio->'direcciones')::jsonb;
+	
+	v_precio numeric(20,2) := (i_servicio->'precio')::jsonb;
+	v_distancia numeric(20,2) := (i_servicio->'distancia')::jsonb;
+
     v_direccion jsonb;
 BEGIN
 
@@ -95,14 +103,27 @@ BEGIN
     FOR v_direccion IN SELECT * FROM jsonb_array_elements(v_direcciones) LOOP
         INSERT INTO public.tbl_detalles_servicio
         (
-            id_servicio, odr, direccion_inicial, hora_inicio,
-            direccion_final, hora_final, id_estado, solicitante, 
-			precio, distancia, fecha_creacion, usuario_creacion
+            id_servicio, 
+			odr, 
+			direccion_inicial, 
+			hora_inicio,
+            direccion_final, 
+			hora_final, 
+			id_estado, solicitante,
+			precio,
+			distancia
         )
         VALUES(
-            v_tbl_servicios.id_servicio, (v_direccion->>'odr')::text, (v_direccion->>'direc_inicio')::text, (v_direccion->>'hora_inicio')::time,
-            (v_direccion->>'direc_final')::text, (v_direccion->>'hora_final')::time, v_estado_activo, (v_direccion->>'solicitante')::text, 
-			(v_direccion->>'precio')::float8, (v_direccion->>'distancia')::float4, now(), v_usuario_id
+            v_tbl_servicios.id_servicio, 
+			(v_direccion->>'odr')::text, 
+			(v_direccion->>'direc_inicio')::text, 
+			(v_direccion->>'hora_inicio')::time,
+            (v_direccion->>'direc_final')::text, 
+			(v_direccion->>'hora_final')::time, 
+			v_estado_activo, 
+			(v_direccion->>'solicitante')::text,
+			v_precio,
+			v_distancia
         ) RETURNING * INTO v_tbl_detalles_servicio;
 
         IF v_tbl_detalles_servicio.id_detalle IS NULL THEN
@@ -117,7 +138,8 @@ BEGIN
         results := json_build_object('statusCode', 500, 'message', SQLERRM, 'data', NULL);
         RETURN;
 END
-$$;
+$procedure$
+;
 
 
 CREATE OR REPLACE PROCEDURE public.inactivar_activar_detalle_servicio(IN i_parametros json, OUT results json) LANGUAGE 'plpgsql' AS $$
