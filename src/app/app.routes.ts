@@ -1,4 +1,5 @@
 import { AuthRouter } from "./auth/auth.routes";
+import { ExternalRouter } from "./external/external.routes";
 import { ServiciosRouter } from "./servicios/servicios.routes";
 import { SolicitantesRouter } from "./solicitantes/solicitantes.routes";
 import { TiposIdentificacionesRouter } from "./tipos-identificaciones/tipos-identificaciones.routes";
@@ -12,4 +13,5 @@ export const ROUTES = [
     new SolicitantesRouter().router,
     new UsuariosRouter().router,
     new ServiciosRouter().router,
+    new ExternalRouter().router,
 ]
