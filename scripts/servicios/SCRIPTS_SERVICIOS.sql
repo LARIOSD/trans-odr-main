@@ -85,9 +85,6 @@ DECLARE
     v_fecha_servicio date 		:= (i_servicio->>'fecha_servicio')::date;
 
     v_direcciones jsonb := (i_servicio->'direcciones')::jsonb;
-	
-	v_precio numeric(20,2) := (i_servicio->'precio')::jsonb;
-	v_distancia numeric(20,2) := (i_servicio->'distancia')::jsonb;
 
     v_direccion jsonb;
 BEGIN
@@ -109,7 +106,8 @@ BEGIN
 			hora_inicio,
             direccion_final, 
 			hora_final, 
-			id_estado, solicitante,
+			id_estado, 
+            solicitante,
 			precio,
 			distancia
         )
@@ -122,8 +120,8 @@ BEGIN
 			(v_direccion->>'hora_final')::time, 
 			v_estado_activo, 
 			(v_direccion->>'solicitante')::text,
-			v_precio,
-			v_distancia
+			(v_direccion->>'precio')::numeric(20,2),
+			(v_direccion->>'distancia')::numeric(20,2)
         ) RETURNING * INTO v_tbl_detalles_servicio;
 
         IF v_tbl_detalles_servicio.id_detalle IS NULL THEN
@@ -140,6 +138,7 @@ BEGIN
 END
 $procedure$
 ;
+
 
 
 CREATE OR REPLACE PROCEDURE public.inactivar_activar_detalle_servicio(IN i_parametros json, OUT results json) LANGUAGE 'plpgsql' AS $$

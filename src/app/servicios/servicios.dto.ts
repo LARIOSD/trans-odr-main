@@ -24,15 +24,6 @@ export interface DireccionDetalleDto {
 
 export const ServicioSchema = z.object({
     id_servicio: z.number().optional().nullable(),
-
-    precio: z.number({
-        required_error: "Debe agregar una precio",
-        invalid_type_error: "El precio debe ser un número",
-    }).min(1, { message: "Agregue la precio" }),
-    distancia: z.number({
-        required_error: "Debe agregar una distancia",
-        invalid_type_error: "La distancia debe ser un número",
-    }).min(1, { message: "Agregue la distancia" }),
     tipo_servicio: z.number({
         required_error: "Seleccione un tipo de servicio",
         invalid_type_error: "El tipo de servicio debe ser un número",
