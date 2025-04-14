@@ -3,7 +3,6 @@ import { ErrorCodes, TypeErrors } from '@common/constants/errors';
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
-  console.log("WENASSSS :::: 1 ");
 
     const errorBody = await response.text();
 
@@ -17,7 +16,6 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
       status    : response.status,
     };
   }
-  console.log("WENASSSS :::: ");
   
   const jsonResponse = (await response.json()) as T;
 

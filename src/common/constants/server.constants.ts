@@ -8,7 +8,14 @@ export const POSTGRES_BD_CONFIG = {
     database: process.env.PGDATABASE,
     password: process.env.PGPASSWORD,
     port: Number(process.env.PGPORT),
-    ssl: false
+    ssl: process.env.PGSSL === 'true'
+}
+
+export const CONFIG_ENV = {
+    isHttps : process.env.IS_HTTPS === 'true',
+    cert_https : process.env.CERT_HTTPS || '',
+    key_https : process.env.KEY_HTTPS || '',
+
 }
 
 export const EXTERNALS_ENV = {
@@ -16,4 +23,8 @@ export const EXTERNALS_ENV = {
     googleToken : process.env.API_KEY_GOOGLE
 }
 
-console.log(POSTGRES_BD_CONFIG);
+//console.log(POSTGRES_BD_CONFIG);
+//console.log(EXTERNALS_ENV);
+//console.log(CONFIG_ENV);
+
+
