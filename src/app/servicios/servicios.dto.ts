@@ -17,6 +17,7 @@ export interface DireccionDetalleDto {
     hora_final: string;
     odr?: string;
     solicitante: string;
+    referencia?: string;
     precio?: number;
     distancia?: number;
     fecha_registro?: string;
@@ -55,6 +56,10 @@ export const ServicioSchema = z.object({
                 required_error: "El ODR es obligatorio",
                 invalid_type_error: "El ODR debe ser una cadena",
             }).max(3, { message: "El ODR máximo puede contener 3 números" }).optional().nullable(),
+            referencia: z.string({
+                required_error: "El referencia es obligatorio",
+                invalid_type_error: "El referencia debe ser una cadena",
+            }).max(50, { message: "El referencia máximo puede contener 50 números" }).optional().nullable(),
             solicitante: z.string({
                 required_error: "El nombre del solicitante es obligatorio",
                 invalid_type_error: "El nombre del solicitante debe ser una cadena",
