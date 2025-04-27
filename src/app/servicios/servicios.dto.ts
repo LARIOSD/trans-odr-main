@@ -15,6 +15,7 @@ export interface DireccionDetalleDto {
     direc_final: string;
     hora_inicio: string;
     hora_final: string;
+    fecha_recorrido: string;
     odr?: string;
     solicitante: string;
     referencia?: string;
@@ -52,6 +53,10 @@ export const ServicioSchema = z.object({
                 required_error: "La hora de fin es obligatoria",
                 invalid_type_error: "La hora de fin debe ser una cadena",
             }).min(1, { message: "La hora de fin es obligatoria" }),
+            fecha_recorrido: z.string({
+                required_error: "Ingrese la fecha de recorrido del servicio",
+                invalid_type_error: "La fecha de recorrido del servicio debe ser una cadena",
+            }).min(1, { message: "Ingrese la fecha de recorrido del servicio" }),
             odr: z.string({
                 required_error: "El ODR es obligatorio",
                 invalid_type_error: "El ODR debe ser una cadena",
