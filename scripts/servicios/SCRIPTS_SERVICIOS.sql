@@ -6,6 +6,7 @@ ALTER TABLE public.tbl_detalles_servicio ADD distancia numeric(20, 2) NULL;
 ALTER TABLE public.tbl_detalles_servicio ADD fecha_creacion timestamp DEFAULT now() NOT NULL;
 ALTER TABLE public.tbl_detalles_servicio ADD usuario_creacion int NOT NULL;
 ALTER TABLE public.tbl_detalles_servicio ALTER COLUMN odr DROP NOT NULL;
+ALTER TABLE public.tbl_detalles_servicio ADD referencia varchar(50) DEFAULT NULL;
 
 
 
@@ -44,7 +45,7 @@ BEGIN
                 ptds.id_detalle, ptst.descripcion AS tipo_servicio, pts.fecha_servicio AS fecha_trayecto,
                 ptds.solicitante, ptds.direccion_inicial AS direc_inicio, ptds.direccion_final AS direc_final, 
                 ptds.hora_inicio, ptds.hora_final, ptds.odr, CONCAT(ptu.nombres, ' ', ptu.apellidos) AS conductor,
-				ptds.precio, ptds.distancia, 
+				ptds.precio, ptds.distancia, ptds.referencia,
                 CASE 
                     WHEN v_es_admin IS TRUE THEN 
                         TO_CHAR(ptds.fecha_creacion, 'YYYY-MM-DD HH24:MI')
@@ -109,7 +110,8 @@ BEGIN
 			id_estado, 
             solicitante,
 			precio,
-			distancia
+			distancia,
+            referencia
         )
         VALUES(
             v_tbl_servicios.id_servicio, 
@@ -121,7 +123,8 @@ BEGIN
 			v_estado_activo, 
 			(v_direccion->>'solicitante')::text,
 			(v_direccion->>'precio')::numeric(20,2),
-			(v_direccion->>'distancia')::numeric(20,2)
+			(v_direccion->>'distancia')::numeric(20,2),
+            (v_direccion->>'referencia')::varchar(50)
         ) RETURNING * INTO v_tbl_detalles_servicio;
 
         IF v_tbl_detalles_servicio.id_detalle IS NULL THEN
@@ -236,7 +239,7 @@ BEGIN
                 ptds.id_detalle, ptst.descripcion AS tipo_servicio, pts.fecha_servicio AS fecha_trayecto,
                 ptds.solicitante, ptds.direccion_inicial AS direc_inicio, ptds.direccion_final AS direc_final, 
                 ptds.hora_inicio, ptds.hora_final, ptds.odr, CONCAT(ptu.nombres, ' ', ptu.apellidos) AS conductor,
-                ptds.precio, ptds.distancia, 
+                ptds.precio, ptds.distancia, ptds.referencia,
                 CASE 
                     WHEN v_es_admin IS TRUE THEN 
                         TO_CHAR(ptds.fecha_creacion, 'YYYY-MM-DD HH24:MI')
