@@ -16,6 +16,9 @@ export class ServiciosRouter extends BaseRouter<ServiciosController> {
         this.router.route(`/${this.subcarpeta}/detalle/:id`)
             .delete(sessionMiddleware, (req, res) => this.controller.inactivar_activar_detalle_servicio(req, res))
 
+        this.router.route(`/${this.subcarpeta}/detalle/estado/:id`)
+            .put(sessionMiddleware, (req, res) => this.controller.aprobar_detalle_servicio(req, res))
+
         this.router.route(`/${this.subcarpeta}/filtrar`)
             .post(sessionMiddleware, (req, res) => this.controller.obtener_servicios_filtrados(req, res))
 

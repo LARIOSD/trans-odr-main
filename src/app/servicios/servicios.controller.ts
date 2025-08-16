@@ -55,4 +55,15 @@ export class ServiciosController extends BaseController<ServiciosService> {
 
         return serverResponse(res, response)
     }
+
+    async aprobar_detalle_servicio(req: any, res: any) {
+        const { id } = req.params
+        const { estado } = req.query
+
+        if (!id) return serverResponse(res, { statusCode: REPONSES_CODES.BAD_REQUEST, message: 'No se ha encontrado el identificador del detalle', data: {} })
+
+        const response = await this.service.aprobar_detalle_servicio(id, estado)
+
+        return serverResponse(res, response)
+    }
 }

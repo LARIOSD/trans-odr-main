@@ -39,4 +39,13 @@ export class ServiciosService extends BaseService<ServiciosQuerys> {
         return response
     }
 
+    async aprobar_detalle_servicio(id: string, estado: string) {
+        const data = { id, estado }
+        const parametros = JSON.stringify(data)
+
+        const response = await this.query.aprobar_detalle_servicio(parametros)
+
+        return response
+    }
+
 }

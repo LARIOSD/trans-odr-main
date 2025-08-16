@@ -25,4 +25,9 @@ export class ServiciosQuerys {
         const res: any = await this.postgres.procedure(`public.inactivar_activar_detalle_servicio('${parametros}', '{}')`)
         return res?.rows[0].results
     }
+    
+    async aprobar_detalle_servicio(parametros: string) {
+        const res: any = await this.postgres.procedure(`public.aprobar_detalle_servicio('${parametros}', '{}')`)
+        return res?.rows[0].results
+    }
 }

@@ -7,7 +7,41 @@ ALTER TABLE public.tbl_detalles_servicio ADD fecha_creacion timestamp DEFAULT no
 ALTER TABLE public.tbl_detalles_servicio ADD usuario_creacion int NOT NULL;
 ALTER TABLE public.tbl_detalles_servicio ALTER COLUMN odr DROP NOT NULL;
 ALTER TABLE public.tbl_detalles_servicio ADD referencia varchar(50) DEFAULT NULL;
-ALTER TABLE public.tbl_detalles_servicio ADD fecha_recorrido timestamp DEFAULT NULL;
+
+
+/* 
+CREATE TABLE public.tbl_estados_servicio (
+	id_estado bigserial NOT NULL,
+	descripcion varchar(50) NOT NULL,
+	CONSTRAINT tbl_estados_servicio_pkey PRIMARY KEY (id_estado)
+);
+
+INSERT INTO public.tbl_estados_servicio (descripcion) 
+VALUES ('APROBADO');
+
+INSERT INTO public.tbl_estados_servicio (descripcion) 
+VALUES ('NO APROBADO');
+
+ALTER TABLE public.tbl_detalles_servicio
+ADD COLUMN id_estado_detalle int8;
+
+UPDATE public.tbl_detalles_servicio
+SET id_estado_detalle = 1
+WHERE id_estado_detalle IS NULL;
+
+ALTER TABLE public.tbl_detalles_servicio
+ALTER COLUMN id_estado_detalle SET DEFAULT 2;
+
+ALTER TABLE public.tbl_detalles_servicio
+ALTER COLUMN id_estado_detalle SET NOT NULL;
+
+ALTER TABLE public.tbl_detalles_servicio
+ADD CONSTRAINT fk_tbl_detalles_servicio_estado
+FOREIGN KEY (id_estado_detalle) REFERENCES public.tbl_estados_servicio (id_estado);
+
+ */
+
+
 
 -- DROP FUNCTION public.fnc_obtener_servicios(json);
 
@@ -44,7 +78,7 @@ BEGIN
                 ptds.id_detalle, ptst.descripcion AS tipo_servicio, pts.fecha_servicio AS fecha_trayecto,
                 ptds.solicitante, ptds.direccion_inicial AS direc_inicio, ptds.direccion_final AS direc_final, 
                 ptds.hora_inicio, ptds.hora_final, ptds.odr, CONCAT(ptu.nombres, ' ', ptu.apellidos) AS conductor,
-				ptds.precio, ptds.distancia, ptds.referencia, ptds.fecha_recorrido,
+				ptds.precio, ptds.distancia, ptds.referencia, ptds.fecha_recorrido, ptds.id_estado_detalle,
                 CASE 
                     WHEN v_es_admin IS TRUE THEN 
                         TO_CHAR(ptds.fecha_creacion, 'YYYY-MM-DD HH24:MI')
@@ -178,14 +212,12 @@ END
 $$;
 
 
+-- DROP FUNCTION public.fnc_obtener_servicios_filtro(json);
 
-
-
-
-CREATE OR REPLACE FUNCTION public.fnc_obtener_servicios_filtro(params json) 
-RETURNS json 
-LANGUAGE 'plpgsql' 
-AS $$
+CREATE OR REPLACE FUNCTION public.fnc_obtener_servicios_filtro(params json)
+ RETURNS json
+ LANGUAGE plpgsql
+AS $function$
 DECLARE
     v_estado_id integer := (params->>'estado')::integer;
     v_usuario_id integer := COALESCE((params->>'conductor')::integer, 0::int);
@@ -240,7 +272,7 @@ BEGIN
                 ptds.id_detalle, ptst.descripcion AS tipo_servicio, pts.fecha_servicio AS fecha_trayecto,
                 ptds.solicitante, ptds.direccion_inicial AS direc_inicio, ptds.direccion_final AS direc_final, 
                 ptds.hora_inicio, ptds.hora_final, ptds.odr, CONCAT(ptu.nombres, ' ', ptu.apellidos) AS conductor,
-                ptds.precio, ptds.distancia, ptds.referencia,
+                ptds.precio, ptds.distancia, ptds.referencia, ptds.fecha_recorrido, ptds.id_estado_detalle,
                 CASE 
                     WHEN v_es_admin IS TRUE THEN 
                         TO_CHAR(ptds.fecha_creacion, 'YYYY-MM-DD HH24:MI')
@@ -261,4 +293,44 @@ BEGIN
 
     RETURN json_build_object('statusCode', 200, 'message', 'OK', 'data', COALESCE(r_data, '[]'::json));
 END
-$$;
+$function$
+;
+
+
+
+-- DROP PROCEDURE public.aprobar_detalle_servicio(in json, out json);
+
+CREATE OR REPLACE PROCEDURE public.aprobar_detalle_servicio(IN i_parametros json, OUT results json)
+ LANGUAGE plpgsql
+AS $procedure$
+DECLARE
+    v_estado_activo integer := 1;
+    v_estado_inactivo integer := 2;
+    v_detalle_id integer := (i_parametros->>'id')::integer;
+    v_estado_id integer := COALESCE((i_parametros->>'estado')::integer, v_estado_inactivo);
+
+    v_tbl_servicios public.tbl_servicios%rowtype;
+    v_tbl_detalles_servicio public.tbl_detalles_servicio%rowtype;
+BEGIN
+
+    IF NOT EXISTS (SELECT 1 FROM public.tbl_detalles_servicio WHERE id_detalle = v_detalle_id) THEN
+        RAISE EXCEPTION  '{"statusCode": 404, "message": "No se ha encontrado el detalle - %"}', v_detalle_id;
+    END IF;
+
+    UPDATE public.tbl_detalles_servicio 
+    SET id_estado_detalle = v_estado_id 
+    WHERE id_detalle = v_detalle_id
+    RETURNING * INTO v_tbl_detalles_servicio;
+    
+    IF v_tbl_detalles_servicio.id_detalle IS NULL THEN
+        RAISE EXCEPTION '{"statusCode": 400, "message": "Error al cambiar el estado del detalle - %"}', v_detalle_id;
+    END IF;
+  
+    results := json_build_object('statusCode', 200, 'message', 'Registro actualizado correctamente');
+
+    EXCEPTION WHEN OTHERS THEN
+        results := json_build_object('statusCode', 500, 'message', SQLERRM);
+        RETURN;
+END
+$procedure$
+;
